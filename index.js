@@ -1,57 +1,79 @@
 const express = require('express');
-const { Client, GatewayIntentBits } = require('discord.js');
+const session = require('express-session');
+const passport = require('passport');
+const DiscordStrategy = require('passport-discord').Strategy;
+const { Client, GatewayIntentBits, Collection, REST, Routes, SlashCommandBuilder } = require('discord.js');
 const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Configuration pour lire les formulaires HTML
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-app.use(express.urlencoded({ extended: true })); 
+// --- CONFIGURATION OAUTH2 (Passport) ---
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
 
-const client = new Client({ 
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] 
+passport.use(new DiscordStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: `https://${process.env.RENDER_EXTERNAL_HOSTNAME}/callback`, // S'adapte automatiquement sur Render
+    scope: ['identify', 'guilds']
+}, (accessToken, refreshToken, profile, done) => {
+    process.nextTick(() => done(null, profile));
+}));
+
+app.set('view engine', 'ejs');
+app.use(session({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.urlencoded({ extended: true }));
+
+// --- CONFIGURATION DU BOT ---
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildInvites]
 });
 
-// Variables que l'on pourra modifier depuis le Dashboard
-let botSettings = {
-    welcomeMessage: "Bienvenue sur le serveur !",
-    logChannel: "general"
-};
+// Cache pour les invitations
+const invitesCache = new Map();
 
-// Route pour afficher le Dashboard
-app.get('/', (req, res) => {
-    // Calcul des statistiques en direct
-    const serverCount = client.guilds.cache.size;
-    const memberCount = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
-
-    res.render('dashboard', {
-        botName: client.user ? client.user.username : 'Solo-Bot',
-        avatar: client.user ? client.user.displayAvatarURL() : 'https://cdn.discordapp.com/embed/avatars/0.png',
-        servers: serverCount,
-        members: memberCount,
-        status: client.ws.status === 0 ? 'Connecté' : 'Déconnecté',
-        settings: botSettings
+client.once('ready', async () => {
+    console.log(`✅ Solo-Bot est prêt : ${client.user.tag}`);
+    // Refresh des invites au démarrage
+    client.guilds.cache.forEach(async (guild) => {
+        const firstInvites = await guild.invites.fetch().catch(() => new Collection());
+        invitesCache.set(guild.id, new Collection(firstInvites.map(i => [i.code, i.uses])));
     });
 });
 
-// Route pour sauvegarder les réglages du Dashboard
-app.post('/save-settings', (req, res) => {
-    botSettings.welcomeMessage = req.body.welcomeMessage;
-    botSettings.logChannel = req.body.logChannel;
-    
-    console.log("🛠️ Nouveaux paramètres sauvegardés via le Dashboard !");
-    // On redirige vers l'accueil après la sauvegarde
-    res.redirect('/'); 
+// --- ROUTES DU DASHBOARD ---
+
+// Accueil (Login)
+app.get('/', (req, res) => {
+    if (req.isAuthenticated()) return res.redirect('/dashboard');
+    res.render('dashboard', { user: null, bot: client });
 });
 
-client.once('ready', () => {
-    console.log(`✅ ${client.user.tag} est prêt !`);
+// Connexion
+app.get('/login', passport.authenticate('discord'));
+app.get('/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
+    res.redirect('/dashboard');
+});
+app.get('/logout', (req, res) => {
+    req.logout(() => res.redirect('/'));
+});
+
+// Dashboard (Une fois connecté)
+app.get('/dashboard', (req, res) => {
+    if (!req.isAuthenticated()) return res.redirect('/');
+    
+    // On ne garde que les serveurs où l'utilisateur est ADMIN
+    const adminGuilds = req.user.guilds.filter(g => (g.permissions & 0x8) === 0x8);
+    
+    res.render('dashboard', { 
+        user: req.user, 
+        guilds: adminGuilds,
+        bot: client
+    });
 });
 
 client.login(process.env.TOKEN);
-
-app.listen(port, () => {
-    console.log(`🚀 Dashboard en ligne sur le port ${port}`);
-});
+app.listen(port, () => console.log(`🚀 Site sur le port ${port}`));
