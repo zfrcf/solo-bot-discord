@@ -1,94 +1,57 @@
 const express = require('express');
-const { Client, GatewayIntentBits, Collection, REST, Routes, SlashCommandBuilder } = require('discord.js');
+const { Client, GatewayIntentBits } = require('discord.js');
+const path = require('path');
 
-// --- CONFIGURATION DU SERVEUR WEB (Pour Render) ---
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Configuration pour lire les formulaires HTML
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.urlencoded({ extended: true })); 
+
+const client = new Client({ 
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] 
+});
+
+// Variables que l'on pourra modifier depuis le Dashboard
+let botSettings = {
+    welcomeMessage: "Bienvenue sur le serveur !",
+    logChannel: "general"
+};
+
+// Route pour afficher le Dashboard
 app.get('/', (req, res) => {
-    res.send('<h1>✅ Solo-Bot est en ligne !</h1><p>Le bot et le dashboard fonctionnent.</p>');
-});
+    // Calcul des statistiques en direct
+    const serverCount = client.guilds.cache.size;
+    const memberCount = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
 
-app.listen(port, () => {
-    console.log(`✅ Serveur web actif sur le port ${port}`);
-});
-
-// --- CONFIGURATION DU BOT DISCORD ---
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildInvites
-    ]
-});
-
-const invitesCache = new Map();
-
-client.once('ready', async () => {
-    console.log(`✅ Connecté en tant que ${client.user.tag}`);
-
-    // Enregistrement de la commande /invite
-    const commands = [
-        new SlashCommandBuilder()
-            .setName('invite')
-            .setDescription('Génère un lien d\'invitation unique.')
-    ].map(command => command.toJSON());
-
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-
-    try {
-        await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        console.log('✅ Commande /invite enregistrée.');
-    } catch (error) {
-        console.error('❌ Erreur slash commands:', error);
-    }
-
-    // Charger les invitations existantes au démarrage
-    client.guilds.cache.forEach(async (guild) => {
-        try {
-            const firstInvites = await guild.invites.fetch();
-            invitesCache.set(guild.id, new Collection(firstInvites.map((inv) => [inv.code, inv.uses])));
-        } catch (err) {
-            console.log(`Impossible de lire les invites pour ${guild.name}`);
-        }
+    res.render('dashboard', {
+        botName: client.user ? client.user.username : 'Solo-Bot',
+        avatar: client.user ? client.user.displayAvatarURL() : 'https://cdn.discordapp.com/embed/avatars/0.png',
+        servers: serverCount,
+        members: memberCount,
+        status: client.ws.status === 0 ? 'Connecté' : 'Déconnecté',
+        settings: botSettings
     });
 });
 
-// Logique de la commande /invite
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-
-    if (interaction.commandName === 'invite') {
-        const invite = await interaction.channel.createInvite({
-            maxAge: 0,
-            unique: true,
-            reason: `Lien pour ${interaction.user.tag}`
-        });
-
-        await interaction.reply({
-            content: `Voici ton lien unique : ${invite.url}\nPartage-le pour que je puisse compter tes invitations !`,
-            ephemeral: true
-        });
-    }
+// Route pour sauvegarder les réglages du Dashboard
+app.post('/save-settings', (req, res) => {
+    botSettings.welcomeMessage = req.body.welcomeMessage;
+    botSettings.logChannel = req.body.logChannel;
+    
+    console.log("🛠️ Nouveaux paramètres sauvegardés via le Dashboard !");
+    // On redirige vers l'accueil après la sauvegarde
+    res.redirect('/'); 
 });
 
-// Détection des nouveaux membres et de l'inviteur
-client.on('guildMemberAdd', async (member) => {
-    try {
-        const newInvites = await member.guild.invites.fetch();
-        const oldInvites = invitesCache.get(member.guild.id);
-        
-        const inviteUsed = newInvites.find(inv => inv.uses > (oldInvites.get(inv.code) || 0));
-
-        if (inviteUsed) {
-            console.log(`👤 ${member.user.tag} a rejoint ! Invité par : ${inviteUsed.inviter.tag}`);
-        }
-
-        // Mise à jour du cache
-        invitesCache.set(member.guild.id, new Collection(newInvites.map((inv) => [inv.code, inv.uses])));
-    } catch (e) {
-        console.error("Erreur suivi membre :", e);
-    }
+client.once('ready', () => {
+    console.log(`✅ ${client.user.tag} est prêt !`);
 });
 
 client.login(process.env.TOKEN);
+
+app.listen(port, () => {
+    console.log(`🚀 Dashboard en ligne sur le port ${port}`);
+});
