@@ -2,267 +2,72 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - <%= botName %></title>
+    <title>Solo-Bot Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --bg-main: #1e1e24;
-            --bg-sidebar-servers: #151519;
-            --bg-sidebar-menu: #25252b;
-            --bg-card: #2b2b31;
-            --accent-color: #d95e40; /* Couleur orange/rouge style DraftBot */
-            --text-main: #ffffff;
-            --text-muted: #9e9e9e;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Barre des serveurs (tout à gauche) */
-        .server-bar {
-            width: 70px;
-            background-color: var(--bg-sidebar-servers);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-            gap: 15px;
-            border-right: 1px solid #111;
-        }
-        .server-icon {
-            width: 48px;
-            height: 48px;
-            background-color: #36393f;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.3s;
-            overflow: hidden;
-        }
-        .server-icon:hover, .server-icon.active {
-            border-radius: 16px;
-            background-color: var(--accent-color);
-        }
+        :root { --bg-dark: #1e1e24; --bg-side: #151519; --accent: #d95e40; --text: #ffffff; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg-dark); color: var(--text); display: flex; height: 100vh; }
+        
+        /* Sidebar des serveurs */
+        .server-sidebar { width: 72px; background: var(--bg-side); display: flex; flex-direction: column; align-items: center; padding-top: 15px; gap: 12px; border-right: 1px solid #000; }
+        .server-icon { width: 48px; height: 48px; border-radius: 50%; background: #36393f; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; overflow: hidden; text-decoration: none; color: white; }
+        .server-icon:hover { border-radius: 15px; background: var(--accent); }
         .server-icon img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Menu des modules (à côté des serveurs) */
-        .menu-sidebar {
-            width: 250px;
-            background-color: var(--bg-sidebar-menu);
-            padding: 20px 0;
-            overflow-y: auto;
-        }
-        .menu-header {
-            padding: 0 20px 20px 20px;
-            border-bottom: 1px solid #333;
-            margin-bottom: 10px;
-        }
-        .menu-header h3 { margin: 0; font-size: 16px; }
-        .menu-header p { margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); }
+        /* Contenu */
+        .main { flex: 1; padding: 40px; overflow-y: auto; }
+        .login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+        .btn-discord { background: #5865F2; color: white; padding: 15px 30px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 18px; transition: 0.3s; }
+        .btn-discord:hover { background: #4752c4; transform: translateY(-2px); }
         
-        .menu-item {
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            color: var(--text-muted);
-            text-decoration: none;
-            transition: 0.2s;
-            font-size: 15px;
-        }
-        .menu-item:hover { background-color: #32323a; color: white; }
-        .menu-item.active { border-left: 4px solid var(--accent-color); color: var(--accent-color); background-color: #2a2a32; }
-        .badge { background-color: var(--accent-color); color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: auto; }
-
-        /* Contenu principal */
-        .main-content {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
-        }
-        .page-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .page-desc { color: var(--text-muted); margin-bottom: 30px; font-size: 14px; }
-
-        /* Cartes d'options */
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 8px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .card-header h3 { margin: 0; font-size: 18px; }
-
-        /* Formulaires et Boutons */
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-size: 14px; color: #ccc; }
-        input[type="text"], select, textarea {
-            width: 100%;
-            background-color: #1e1e24;
-            border: 1px solid #444;
-            color: white;
-            padding: 12px;
-            border-radius: 6px;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-color); }
-        textarea { resize: vertical; min-height: 80px; }
-        
-        .btn-save {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            font-size: 16px;
-            transition: 0.2s;
-        }
-        .btn-save:hover { background-color: #bf4d30; }
-
-        /* Interrupteur (Toggle Switch) iOS/Discord style */
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #43b581; }
-        input:checked + .slider:before { transform: translateX(26px); }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .menu-sidebar { display: none; } /* Cache le menu sur petit écran, il faudrait un bouton hamburger en vrai */
-            .main-content { padding: 20px; }
-        }
+        .card { background: #2b2b31; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 5px solid var(--accent); }
+        .btn-invite { background: #43b581; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <div class="server-bar">
-        <div class="server-icon active">
-            <img src="<%= avatar %>" alt="Bot">
+    <% if (!user) { %>
+        <div class="login-container">
+            <img src="https://brandlogovector.com/wp-content/uploads/2020/06/Discord-Logo-Icon-White-768x576.png" width="80">
+            <h1 style="margin: 20px 0;">Solo-Bot Manager</h1>
+            <a href="/login" class="btn-discord"><i class="fa-brands fa-discord"></i> Se connecter avec Discord</a>
         </div>
-        <div class="server-icon">
-            <i class="fa-solid fa-plus"></i>
+    <% } else { %>
+        <div class="server-sidebar">
+            <a href="/dashboard" class="server-icon" title="Accueil"><i class="fa-solid fa-house"></i></a>
+            <hr style="width: 40px; border: 1px solid #333;">
+            <% guilds.forEach(guild => { %>
+                <a href="/dashboard?guild=<%= guild.id %>" class="server-icon" title="<%= guild.name %>">
+                    <% if (guild.icon) { %>
+                        <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png">
+                    <% } else { %>
+                        <%= guild.name.charAt(0) %>
+                    <% } %>
+                </a>
+            <% }) %>
+            <a href="https://discord.com/api/oauth2/authorize?client_id=<%= bot.user.id %>&permissions=8&scope=bot" class="server-icon" style="color: #43b581;"><i class="fa-solid fa-plus"></i></a>
         </div>
-    </div>
 
-    <div class="menu-sidebar">
-        <div class="menu-header">
-            <h3><%= botName %></h3>
-            <p>Tableau de bord administrateur</p>
-        </div>
-        
-        <a href="#" class="menu-item active"><i class="fa-solid fa-right-to-bracket"></i> Arrivées et départs</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-users-gear"></i> Rôles automatiques</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Rôles sécurisés <span class="badge">BETA</span></a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-arrow-trend-up"></i> Niveaux</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-coins"></i> Économie</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-message"></i> Messages</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-gavel"></i> Modération</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-robot"></i> Auto-Modération</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-face-smile"></i> Rôles-Réactions</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-ticket"></i> Tickets</a>
-        <a href="#" class="menu-item"><i class="fa-solid fa-gear"></i> Paramètres du bot</a>
-    </div>
-
-    <div class="main-content">
-        <div class="page-title">
-            <i class="fa-solid fa-right-to-bracket" style="color: var(--accent-color);"></i> Arrivées et départs
-        </div>
-        <div class="page-desc">Configurez comment le bot accueille les nouveaux membres et dit au revoir à ceux qui partent.</div>
-
-        <form action="/save-settings" method="POST">
-            
-            <div class="card">
-                <div class="card-header">
-                    <h3>Messages de Bienvenue</h3>
-                    <label class="switch">
-                        <input type="checkbox" name="welcomeEnabled" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="form-group">
-                    <label>Salon d'annonce</label>
-                    <select name="welcomeChannel">
-                        <option value="general"># général</option>
-                        <option value="bienvenue"># bienvenue</option>
-                        <option value="hall"># hall-dentree</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Message texte (utilisez {user} pour mentionner le membre)</label>
-                    <textarea name="welcomeMessage">Bienvenue {user} sur le serveur ! Tu es le membre n°{memberCount}.</textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Image de bienvenue personnalisée (URL)</label>
-                    <input type="text" name="welcomeImage" placeholder="https://lien-vers-ton-image.png">
-                </div>
-            </div>
+        <div class="main">
+            <header style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Bonjour, <%= user.username %> 👋</h1>
+                <a href="/logout" style="color: #ff4747; text-decoration: none;">Déconnexion</a>
+            </header>
 
             <div class="card">
-                <div class="card-header">
-                    <h3>Messages de Départ</h3>
-                    <label class="switch">
-                        <input type="checkbox" name="leaveEnabled">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                
-                <div class="form-group">
-                    <label>Salon d'annonce</label>
-                    <select name="leaveChannel">
-                        <option value="logs"># logs-serveur</option>
-                        <option value="departs"># departs</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Message texte</label>
-                    <textarea name="leaveMessage">Oh non, {user} vient de quitter le serveur...</textarea>
+                <h3>Gestion des serveurs</h3>
+                <p>Sélectionne un serveur à gauche pour le configurer ou invite le bot sur un nouveau serveur :</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+                    <% guilds.forEach(guild => { %>
+                        <div style="background: #1e1e24; padding: 15px; border-radius: 8px; text-align: center; width: 150px;">
+                            <p style="font-size: 14px; height: 40px; overflow: hidden;"><%= guild.name %></p>
+                            <a href="https://discord.com/api/oauth2/authorize?client_id=<%= bot.user.id %>&permissions=8&scope=bot&guild_id=<%= guild.id %>" class="btn-invite">Inviter / Gérer</a>
+                        </div>
+                    <% }) %>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3>Suivi des Invitations (Tracker)</h3>
-                    <label class="switch">
-                        <input type="checkbox" name="inviteTrackerEnabled" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>Format du message lors d'une invitation réussie</label>
-                    <textarea name="inviteMessage">{user} a rejoint ! Invité par {inviter} (qui a maintenant {invites} invitations).</textarea>
-                </div>
-            </div>
-
-            <button type="submit" class="btn-save"><i class="fa-solid fa-floppy-disk"></i> Sauvegarder les modifications</button>
-        </form>
-    </div>
+        </div>
+    <% } %>
 
 </body>
 </html>
