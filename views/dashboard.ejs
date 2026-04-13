@@ -2,43 +2,54 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Solo-Invites Dashboard</title>
+    <title>Solo-Invites | Dashboard</title>
     <style>
-        body { font-family: sans-serif; background: #2f3136; color: white; margin: 0; }
-        .navbar { background: #202225; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .container { padding: 20px; display: flex; flex-wrap: wrap; gap: 20px; }
-        .card { background: #36393f; padding: 20px; border-radius: 8px; width: 200px; text-align: center; }
-        .card img { border-radius: 50%; width: 80px; margin-bottom: 10px; }
-        .btn { background: #5865f2; color: white; padding: 10px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; }
-        .login-btn { background: #5865f2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        :root { --bg: #2f3136; --card: #36393f; --accent: #5865f2; --text: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+        .nav { background: #202225; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .container { padding: 40px; display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; }
+        .card { background: var(--card); padding: 25px; border-radius: 12px; width: 220px; text-align: center; transition: 0.3s; border: 1px solid rgba(255,255,255,0.05); }
+        .card:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .card img { border-radius: 50%; width: 90px; height: 90px; margin-bottom: 15px; background: #444; object-fit: cover; }
+        .btn { background: var(--accent); color: white; padding: 12px 20px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 14px; }
+        .hero { text-align: center; margin-top: 100px; }
+        .login-btn { background: var(--accent); color: white; padding: 18px 40px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 20px; box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4); }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <h2>Solo-Invites</h2>
+    <div class="nav">
+        <h2 style="margin:0; color: var(--accent);">Solo-Invites</h2>
         <% if (user) { %>
-            <div><%= user.username %> <a href="/logout" style="color: #ff4747; margin-left: 10px;">Déconnexion</a></div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <b><%= user.username %></b>
+                <a href="/logout" style="color: #ff4747; text-decoration:none; font-size:14px;">Déconnexion</a>
+            </div>
         <% } %>
     </div>
 
     <div class="container">
         <% if (!user) { %>
-            <div style="width: 100%; text-align: center; margin-top: 100px;">
-                <h1>Bienvenue sur le Tracker d'invitations</h1>
-                <br><br>
+            <div class="hero">
+                <h1 style="font-size: 45px;">Gérez vos invitations.</h1>
+                <p style="color: #b9bbbe; margin-bottom: 40px;">Connectez-vous pour voir vos serveurs et configurer le bot.</p>
                 <a href="/login" class="login-btn">Se connecter avec Discord</a>
             </div>
         <% } else { %>
+            <div style="width:100%; margin-bottom: 20px; text-align:center;">
+                <h1>Vos Serveurs Admin</h1>
+                <p style="color: #b9bbbe;">Sélectionnez un serveur pour inviter le bot.</p>
+            </div>
+            
             <% guilds.forEach(guild => { %>
                 <div class="card">
                     <% if (guild.icon) { %>
                         <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png">
                     <% } else { %>
-                        <div style="width:80px; height:80px; background:#444; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center;">?</div>
+                        <div style="width:90px; height:90px; background:#444; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:30px;"><%= guild.name.charAt(0) %></div>
                     <% } %>
-                    <h3><%= guild.name %></h3>
-                    <a href="https://discord.com/api/oauth2/authorize?client_id=<%= clientId %>&permissions=8&scope=bot&guild_id=<%= guild.id %>" class="btn">Inviter le Bot</a>
+                    <h3 style="margin-bottom:20px; font-size:18px;"><%= guild.name %></h3>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=<%= clientId %>&permissions=8&scope=bot&guild_id=<%= guild.id %>" target="_blank" class="btn">Inviter le Bot</a>
                 </div>
             <% }) %>
         <% } %>
