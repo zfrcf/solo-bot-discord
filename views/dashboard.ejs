@@ -5,66 +5,131 @@
     <title>Solo-Bot Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* CSS GLOBAL */
         :root { --bg-dark: #1e1e24; --bg-side: #151519; --accent: #d95e40; --text: #ffffff; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg-dark); color: var(--text); display: flex; height: 100vh; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-dark); color: var(--text); }
         
-        /* Sidebar des serveurs */
-        .server-sidebar { width: 72px; background: var(--bg-side); display: flex; flex-direction: column; align-items: center; padding-top: 15px; gap: 12px; border-right: 1px solid #000; }
-        .server-icon { width: 48px; height: 48px; border-radius: 50%; background: #36393f; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; overflow: hidden; text-decoration: none; color: white; }
+        /* CSS DE LA PAGE D'ACCUEIL */
+        .home-page { height: 100vh; display: flex; flex-direction: column; background: linear-gradient(135deg, #151519 0%, #1e1e24 100%); }
+        .navbar { display: flex; justify-content: space-between; padding: 20px 50px; align-items: center; border-bottom: 1px solid #333; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--accent); }
+        .nav-login { background: #5865F2; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; }
+        .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        .hero h1 { font-size: 48px; margin-bottom: 20px; }
+        .hero p { font-size: 20px; color: #b9bbbe; max-width: 600px; margin-bottom: 40px; }
+        .btn-main { background: var(--accent); color: white; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 18px; margin: 10px; transition: 0.2s; }
+        .btn-main:hover { transform: scale(1.05); }
+        .btn-sub { background: #36393f; color: white; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 18px; margin: 10px; }
+
+        /* CSS DU DASHBOARD */
+        .dashboard-page { display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 80px; background: var(--bg-side); display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 15px; border-right: 1px solid #000; overflow-y: auto; }
+        .server-icon { width: 50px; height: 50px; border-radius: 50%; background: #36393f; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; overflow: hidden; text-decoration: none; color: white; font-weight: bold; }
         .server-icon:hover { border-radius: 15px; background: var(--accent); }
         .server-icon img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* Contenu */
-        .main { flex: 1; padding: 40px; overflow-y: auto; }
-        .login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
-        .btn-discord { background: #5865F2; color: white; padding: 15px 30px; border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 18px; transition: 0.3s; }
-        .btn-discord:hover { background: #4752c4; transform: translateY(-2px); }
         
-        .card { background: #2b2b31; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 5px solid var(--accent); }
-        .btn-invite { background: #43b581; color: white; padding: 8px 15px; border-radius: 4px; text-decoration: none; font-size: 13px; }
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .header-dash { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: #2b2b31; padding: 15px 30px; border-radius: 10px; }
+        
+        .grid-servers { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .server-card { background: #2b2b31; padding: 20px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--accent); }
+        .btn-invite { display: inline-block; background: #43b581; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; margin-top: 15px; font-size: 14px; }
+        
+        /* Formulaire Style DraftBot */
+        .config-panel { background: #2b2b31; padding: 30px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <% if (!user) { %>
-        <div class="login-container">
-            <img src="https://brandlogovector.com/wp-content/uploads/2020/06/Discord-Logo-Icon-White-768x576.png" width="80">
-            <h1 style="margin: 20px 0;">Solo-Bot Manager</h1>
-            <a href="/login" class="btn-discord"><i class="fa-brands fa-discord"></i> Se connecter avec Discord</a>
-        </div>
-    <% } else { %>
-        <div class="server-sidebar">
-            <a href="/dashboard" class="server-icon" title="Accueil"><i class="fa-solid fa-house"></i></a>
-            <hr style="width: 40px; border: 1px solid #333;">
-            <% guilds.forEach(guild => { %>
-                <a href="/dashboard?guild=<%= guild.id %>" class="server-icon" title="<%= guild.name %>">
-                    <% if (guild.icon) { %>
-                        <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png">
-                    <% } else { %>
-                        <%= guild.name.charAt(0) %>
-                    <% } %>
-                </a>
-            <% }) %>
-            <a href="https://discord.com/api/oauth2/authorize?client_id=<%= bot.user.id %>&permissions=8&scope=bot" class="server-icon" style="color: #43b581;"><i class="fa-solid fa-plus"></i></a>
-        </div>
-
-        <div class="main">
-            <header style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>Bonjour, <%= user.username %> 👋</h1>
-                <a href="/logout" style="color: #ff4747; text-decoration: none;">Déconnexion</a>
-            </header>
-
-            <div class="card">
-                <h3>Gestion des serveurs</h3>
-                <p>Sélectionne un serveur à gauche pour le configurer ou invite le bot sur un nouveau serveur :</p>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
-                    <% guilds.forEach(guild => { %>
-                        <div style="background: #1e1e24; padding: 15px; border-radius: 8px; text-align: center; width: 150px;">
-                            <p style="font-size: 14px; height: 40px; overflow: hidden;"><%= guild.name %></p>
-                            <a href="https://discord.com/api/oauth2/authorize?client_id=<%= bot.user.id %>&permissions=8&scope=bot&guild_id=<%= guild.id %>" class="btn-invite">Inviter / Gérer</a>
-                        </div>
-                    <% }) %>
+        <div class="home-page">
+            <nav class="navbar">
+                <div class="logo"><i class="fa-solid fa-robot"></i> Solo-Bot</div>
+                <a href="/login" class="nav-login"><i class="fa-brands fa-discord"></i> Connexion</a>
+            </nav>
+            <div class="hero">
+                <h1>Gérez votre serveur comme un <span style="color: var(--accent);">Pro</span>.</h1>
+                <p>Le dashboard le plus simple et complet pour configurer vos invitations, vos messages de bienvenue et bien plus.</p>
+                <div>
+                    <a href="/login" class="btn-main">Accéder au Dashboard</a>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=<%= clientId %>&permissions=8&scope=bot%20applications.commands" target="_blank" class="btn-sub">Inviter le Bot</a>
                 </div>
+            </div>
+        </div>
+
+    <% } else { %>
+        <div class="dashboard-page">
+            
+            <div class="sidebar">
+                <a href="/dashboard" class="server-icon" title="Accueil Dashboard"><i class="fa-solid fa-house"></i></a>
+                <hr style="width: 50%; border: 1px solid #333;">
+                
+                <% guilds.forEach(guild => { %>
+                    <a href="/dashboard?guild=<%= guild.id %>" class="server-icon" title="<%= guild.name %>">
+                        <% if (guild.icon) { %>
+                            <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png">
+                        <% } else { %>
+                            <%= guild.name.charAt(0) %>
+                        <% } %>
+                    </a>
+                <% }) %>
+                <hr style="width: 50%; border: 1px solid #333;">
+                <a href="/logout" class="server-icon" style="background: #ff4747;" title="Déconnexion"><i class="fa-solid fa-power-off"></i></a>
+            </div>
+
+            <div class="main-content">
+                <div class="header-dash">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png" width="50" style="border-radius: 50%;">
+                        <h2>Bonjour, <%= user.username %> 👋</h2>
+                    </div>
+                </div>
+
+                <% if (!selectedGuildId) { %>
+                    <h2>Sélectionnez un serveur</h2>
+                    <p style="color: #aaa;">Choisissez un serveur à configurer ou invitez le bot.</p>
+                    
+                    <div class="grid-servers">
+                        <% guilds.forEach(guild => { %>
+                            <div class="server-card">
+                                <% if (guild.icon) { %>
+                                    <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png" width="80" style="border-radius: 50%; margin-bottom: 10px;">
+                                <% } else { %>
+                                    <div style="width:80px; height:80px; background:#444; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size: 24px;"><%= guild.name.charAt(0) %></div>
+                                <% } %>
+                                <h3><%= guild.name %></h3>
+                                <a href="https://discord.com/api/oauth2/authorize?client_id=<%= clientId %>&permissions=8&scope=bot%20applications.commands&guild_id=<%= guild.id %>" class="btn-invite">
+                                    <i class="fa-solid fa-plus"></i> Inviter le bot
+                                </a>
+                                <br>
+                                <a href="/dashboard?guild=<%= guild.id %>" style="display:inline-block; margin-top: 10px; color: #aaa; text-decoration: none; font-size: 12px;">Aller aux réglages ➔</a>
+                            </div>
+                        <% }) %>
+                    </div>
+
+                <% } else { %>
+                    <% const activeGuild = guilds.find(g => g.id === selectedGuildId); %>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <a href="/dashboard" style="color: #aaa; text-decoration: none;"><i class="fa-solid fa-arrow-left"></i> Retour aux serveurs</a>
+                    </div>
+
+                    <div class="config-panel">
+                        <h2 style="margin-bottom: 20px;"><i class="fa-solid fa-gear"></i> Configuration de : <%= activeGuild ? activeGuild.name : 'Serveur inconnu' %></h2>
+                        
+                        <div style="background: #1e1e24; padding: 20px; border-radius: 8px;">
+                            <h3><i class="fa-solid fa-door-open"></i> Arrivées et départs</h3>
+                            <p style="color: #aaa; margin-top: 5px; margin-bottom: 20px;">Configurez comment le bot accueille les nouveaux membres.</p>
+                            
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Message de Bienvenue (Texte)</label>
+                            <textarea style="width: 100%; height: 80px; background: #2b2b31; color: white; border: 1px solid #444; border-radius: 5px; padding: 10px;" placeholder="Bienvenue {user} sur le serveur !"></textarea>
+                            
+                            <button style="background: var(--accent); color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; margin-top: 15px; cursor: pointer;">Sauvegarder</button>
+                        </div>
+                    </div>
+                <% } %>
+
             </div>
         </div>
     <% } %>
