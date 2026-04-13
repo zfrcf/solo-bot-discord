@@ -2,191 +2,46 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Solo-Bot Dashboard | Pro Edition</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Solo-Invites Dashboard</title>
     <style>
-        /* ========================================== */
-        /* CSS GLOBAL & ANIMATIONS BASE               */
-        /* ========================================== */
-        :root { --bg-dark: #1e1e24; --bg-side: #151519; --bg-panel: #2b2b31; --bg-content: #2f3136; --accent: #d95e40; --text: #ffffff; --text-muted: #b9bbbe; --success: #43b581; }
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s ease-in-out; } /* Transition globale fluide */
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg-dark); color: var(--text); overflow: hidden; }
-        
-        /* Animation d'apparition douce */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animated { animation: fadeIn 0.4s ease-out forwards; }
-
-        /* ========================================== */
-        /* STYLE DU DASHBOARD COMPLET                 */
-        /* ========================================== */
-        .dashboard-page { display: flex; height: 100vh; }
-
-        /* 1. SIDEBAR SERVEURS (Glow & Scale) */
-        .sidebar { width: 80px; background: var(--bg-side); display: flex; flex-direction: column; align-items: center; padding-top: 20px; gap: 15px; border-right: 1px solid #000; overflow-y: auto; }
-        .server-icon { width: 54px; height: 54px; border-radius: 50%; background: #36393f; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; text-decoration: none; color: white; font-weight: bold; font-size: 20px; position: relative; }
-        .server-icon img { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* Animation Icone Serveur */
-        .server-icon:hover { border-radius: 16px; background: var(--accent); transform: scale(1.1); box-shadow: 0 0 15px rgba(217, 94, 64, 0.5); }
-        .server-icon.active::before { content: ''; position: absolute; left: -15px; top: 15px; height: 24px; width: 4px; background: white; border-radius: 0 4px 4px 0; }
-
-        <% if (selectedGuildId) { %>
-            /* 2. INTERNAL NAV (Style DraftBot & Hover Effect) */
-            .internal-nav { width: 280px; background: #1b1b21; display: flex; flex-direction: column; padding: 25px 15px; border-right: 1px solid #2f3136; }
-            .guild-header { padding: 0 10px 25px; border-bottom: 1px solid #333; margin-bottom: 20px; }
-            .guild-header p { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-            .guild-header h3 { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            
-            .nav-item { display: flex; align-items: center; gap: 15px; padding: 14px 18px; text-decoration: none; color: var(--text-muted); border-radius: 8px; margin-bottom: 6px; font-weight: 500; }
-            
-            /* Animation Nav Item */
-            .nav-item:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(5px); }
-            .nav-item.active { background: var(--accent); color: white; box-shadow: 0 4px 10px rgba(217, 94, 64, 0.3); }
-            .nav-item i { width: 20px; text-align: center; font-size: 16px; }
-
-            /* 3. MAIN CONTENT */
-            .main-content { flex: 1; background: var(--bg-content); padding: 40px; overflow-y: auto; display: flex; flex-direction: column; }
-            .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; }
-            .content-header h2 { font-size: 28px; display: flex; align-items: center; gap: 15px; }
-            
-            /* Animation Bouton Sauvegarder (Glow & Pulse) */
-            .btn-save { 
-                background: var(--success); color: white; border: none; padding: 12px 25px; border-radius: 6px; 
-                cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 8px; 
-            }
-            .btn-save:hover { background: #50d196; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(67, 181, 129, 0.4); }
-            .btn-save:active { transform: translateY(1px); }
-
-            .settings-grid { display: grid; grid-template-columns: 1fr; gap: 25px; }
-            .config-card { background: var(--bg-panel); padding: 30px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); }
-            .config-card h3 { margin-bottom: 15px; font-size: 18px; color: white; display: flex; align-items: center; gap: 12px; }
-            .card-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
-
-            /* Inputs & Textarea (Focus Effect) */
-            textarea { 
-                width: 100%; height: 120px; background: #202225; color: white; border: 1px solid #444; 
-                border-radius: 8px; padding: 18px; font-family: inherit; font-size: 15px; line-height: 1.6; resize: none; 
-            }
-            textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 10px rgba(217, 94, 64, 0.3); }
-            
-            .placeholders { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
-            .placeholders code { background: #202225; padding: 4px 10px; border-radius: 5px; color: var(--accent); font-size: 13px; font-weight: bold; cursor: pointer; }
-            .placeholders code:hover { background: var(--accent); color: white; }
-
-            /* Switch Style DraftBot */
-            .switch-group { display: flex; justify-content: space-between; align-items: center; background: #202225; padding: 15px 20px; border-radius: 8px; }
-            .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-            .switch input { opacity: 0; width: 0; height: 0; }
-            .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4f545c; transition: .4s; border-radius: 34px; }
-            .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-            input:checked + .slider { background-color: var(--success); }
-            input:checked + .slider:before { transform: translateX(24px); }
-        <% } %>
+        body { font-family: sans-serif; background: #2f3136; color: white; margin: 0; }
+        .navbar { background: #202225; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 20px; display: flex; flex-wrap: wrap; gap: 20px; }
+        .card { background: #36393f; padding: 20px; border-radius: 8px; width: 200px; text-align: center; }
+        .card img { border-radius: 50%; width: 80px; margin-bottom: 10px; }
+        .btn { background: #5865f2; color: white; padding: 10px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; }
+        .login-btn { background: #5865f2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard-page">
-        
-        <div class="sidebar">
-            <a href="/dashboard" class="server-icon <%= !selectedGuildId ? 'active' : '' %>" title="Accueil Dashboard"><i class="fa-solid fa-house"></i></a>
-            <hr style="width: 40px; border: 1px solid #333; margin: 5px 0;">
-            
+    <div class="navbar">
+        <h2>Solo-Invites</h2>
+        <% if (user) { %>
+            <div><%= user.username %> <a href="/logout" style="color: #ff4747; margin-left: 10px;">Déconnexion</a></div>
+        <% } %>
+    </div>
+
+    <div class="container">
+        <% if (!user) { %>
+            <div style="width: 100%; text-align: center; margin-top: 100px;">
+                <h1>Bienvenue sur le Tracker d'invitations</h1>
+                <br><br>
+                <a href="/login" class="login-btn">Se connecter avec Discord</a>
+            </div>
+        <% } else { %>
             <% guilds.forEach(guild => { %>
-                <a href="/dashboard?guild=<%= guild.id %>" class="server-icon animated <%= selectedGuildId === guild.id ? 'active' : '' %>" title="<%= guild.name %>">
+                <div class="card">
                     <% if (guild.icon) { %>
                         <img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png">
                     <% } else { %>
-                        <%= guild.name.charAt(0) %>
+                        <div style="width:80px; height:80px; background:#444; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center;">?</div>
                     <% } %>
-                </a>
+                    <h3><%= guild.name %></h3>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=<%= clientId %>&permissions=8&scope=bot&guild_id=<%= guild.id %>" class="btn">Inviter le Bot</a>
+                </div>
             <% }) %>
-            <hr style="width: 40px; border: 1px solid #333; margin: 5px 0;">
-            <a href="/logout" class="server-icon" style="background: rgba(255,71,71,0.1); color: #ff4747;" title="Déconnexion"><i class="fa-solid fa-power-off"></i></a>
-        </div>
-
-        <% if (selectedGuildId) { %>
-            <% const activeGuild = guilds.find(g => g.id === selectedGuildId); %>
-            
-            <div class="internal-nav animated">
-                <div class="guild-header">
-                    <p>Configuration</p>
-                    <h3><%= activeGuild.name %></h3>
-                </div>
-                
-                <a href="#" class="nav-item active"><i class="fa-solid fa-envelope-open-text"></i> Arrivées et départs</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-user-plus"></i> Système d'invitations</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-shield-halved"></i> Modération</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-chart-line"></i> Niveaux</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-coins"></i> Économie</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-robot"></i> Rôles automatiques</a>
-            </div>
-
-            <form class="main-content" action="/api/save-welcome" method="POST">
-                <input type="hidden" name="guildId" value="<%= selectedGuildId %>">
-
-                <header class="content-header animated">
-                    <h2><i class="fa-solid fa-envelope-open-text"></i> Arrivées et départs</h2>
-                    <button type="submit" class="btn-save"><i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder les modifications</button>
-                </header>
-
-                <div class="settings-grid animated">
-                    
-                    <div class="config-card">
-                        <h3><i class="fa-solid fa-magnifying-glass"></i> Tracker d'invitations</h3>
-                        <p class="card-desc">Activez cette option pour que le bot identifie l'inviteur lorsqu'un nouveau membre rejoint le serveur.</p>
-                        <div class="switch-group">
-                            <span>Activer le tracking d'invitations</span>
-                            <label class="switch">
-                                <input type="checkbox" name="inviterTracker" <%= config.inviterTracker ? 'checked' : '' %>>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="config-card">
-                        <h3><i class="fa-solid fa-comment-dots"></i> Message de Bienvenue (Texte)</h3>
-                        <p class="card-desc">Personnalisez le message envoyé dans le salon de bienvenue. Utilisez les variables ci-dessous.</p>
-                        <textarea name="welcomeMessage" id="welcomeText" placeholder="Ex: Bienvenue {user} !"><%= config.welcomeMessage %></textarea>
-                        
-                        <div class="placeholders">
-                            <p style="font-size: 13px; color: var(--text-muted); width: 100%; margin-bottom: 5px;">Variables disponibles (cliquez pour insérer) :</p>
-                            <code onclick="insertAtCursor('{user}')">{user}</code> 
-                            <code onclick="insertAtCursor('{inviter}')">{inviter}</code> 
-                            <code onclick="insertAtCursor('{count}')">{count}</code> 
-                            <code onclick="insertAtCursor('{server}')">{server}</code>
-                        </div>
-                    </div>
-
-                </div>
-            </form>
-
-            <script>
-                // Petite fonction JS pour insérer les variables au clic
-                function insertAtCursor(text) {
-                    const txtArea = document.getElementById('welcomeText');
-                    const scrollPos = txtArea.scrollTop;
-                    let caretPos = txtArea.selectionStart;
-
-                    const front = (txtArea.value).substring(0, caretPos);
-                    const back = (txtArea.value).substring(txtArea.selectionEnd, txtArea.value.length);
-                    txtArea.value = front + text + back;
-                    caretPos = caretPos + text.length;
-                    txtArea.selectionStart = caretPos;
-                    txtArea.selectionEnd = caretPos;
-                    txtArea.focus();
-                    txtArea.scrollTop = scrollPos;
-                }
-            </script>
-
-        <% } else { %>
-            <div class="main-content animated" style="align-items: center; justify-content: center; text-align: center;">
-                <i class="fa-solid fa-robot" style="font-size: 60px; color: var(--accent); margin-bottom: 20px;"></i>
-                <h2>Bienvenue sur Solo-Bot Pro</h2>
-                <p style="color: var(--text-muted); margin-top: 10px; max-width: 400px;">Sélectionnez un serveur dans la barre latérale de gauche pour commencer la configuration.</p>
-            </div>
         <% } %>
-
     </div>
 
 </body>
